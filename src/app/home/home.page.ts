@@ -53,17 +53,28 @@ export class HomePage {
     if (task.trim().length == 0) {
       const toast = await this.toastCtrl.create({
         message: "Informe o que deseja fazer!",
-        duration: 2000,
-        position: 'middle',
+        duration: 1500,
+        position: 'bottom',
         animated: true,
         color: 'danger'
       });
       toast.present();
       return;
     }
-    let task2 = { name: task, done: false };
-    this.tasks.push(task2);
-    this.updateLocalStorage();
+    else
+    {
+      let task2 = { name: task, done: false };
+      this.tasks.push(task2);
+      this.updateLocalStorage();
+      const toast = await this.toastCtrl.create({
+        message: "Tarefa adicionada!",
+        duration: 1500,
+        position: 'bottom',
+        animated: true,
+        color: 'light'
+      });
+      toast.present();
+    }
   }
   updateLocalStorage() {
     //Salvar dentro do localstorage do navegador
@@ -76,9 +87,17 @@ export class HomePage {
       buttons: [{
         text: task.done ? "Desmarcar" : "Marcar",
         icon: task.done ? "radio-button-off" : "checkmark-circle",
-        handler: () => {
+        handler: async () => {
           task.done = !task.done;
           this.updateLocalStorage();
+          const toast = this.toastCtrl.create({
+            message: task.done?"Tarefa concluída!":"Tarefa pendente!",
+            duration: 1500,
+            position: 'bottom',
+            animated: true,
+            color: 'light'
+          });
+          (await toast).present();
         }
       },
       {
@@ -92,6 +111,16 @@ export class HomePage {
     });
     await actionsheet.present();
   }
-  
-
+  async delete (task : any){
+    this.tasks = this.tasks.filter(tasksArray=> task != tasksArray);
+    this.updateLocalStorage();
+    const toast = await this.toastCtrl.create({
+      message: "Tarefa removida!",
+      duration: 1500,
+      position: 'bottom',
+      animated: true,
+      color: 'light'
+    });
+    toast.present();
+  }
 }
