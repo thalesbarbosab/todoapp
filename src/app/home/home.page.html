@@ -9,6 +9,9 @@
 <ion-content [fullscreen]="true">
 <!-- List of Sliding Items -->
 <ion-list class="animated bounceInUp">
+  <ion-item *ngIf="tasks.length==0">
+    <ion-label color="warning">Não há tarefas</ion-label>
+  </ion-item>
   <ion-item-sliding *ngFor="let task of tasks">
     <ion-item (click)="actions(task)" >
       <ion-label *ngIf="!task.done">{{task.name}}</ion-label>
