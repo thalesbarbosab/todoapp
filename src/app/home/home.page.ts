@@ -1,6 +1,8 @@
+import { async } from '@angular/core/testing';
+import { UtilsService } from './../services/utils.service';
 import { TaskService } from './../services/task.service';
 import { Component } from '@angular/core';
-import { AlertController, ToastController, ActionSheetController } from '@ionic/angular';
+import { AlertController, ActionSheetController } from '@ionic/angular';
 
 @Component({
   selector: 'app-home',
@@ -9,31 +11,33 @@ import { AlertController, ToastController, ActionSheetController } from '@ionic/
 })
 export class HomePage {
   tasks: any[] = [];
+  processing : boolean = false;
   constructor(private alertCtrl: AlertController,
-    private toastCtrl: ToastController,
     private actionsheetCtrl: ActionSheetController,
-    private taskService: TaskService
+    private taskService: TaskService,
+    private utilsService: UtilsService
   ) {
+    this.utilsService.showLoading("Listando Tarefas...");
+    this.processing = true;
     this.index();
   }
 
   async index(){
     this.taskService.index()
       .then(async(response : any[])=>{
+        this.processing = false;
         console.table(response);
+        //this.utilsService.hideLoading();
         this.tasks = response;
       })
       .catch(async (erro) => {
         console.error(erro);
-        const toast = await this.toastCtrl.create({
-          message: "Ocorreu um erro ao listar as tarefas!",
-          duration: 1500,
-          position: 'bottom',
-          animated: true,
-          color: 'danger'
-        });
-        toast.present();
-      });
+        //this.utilsService.hideLoading();
+        this.utilsService.toast("Ocorreu um erro ao listar as tarefas!",2000, "danger");
+      })
+      .finally(()=>{
+        this.utilsService.hideLoading();
+      })
   }
   async create() {
     const alert = await this.alertCtrl.create({
@@ -65,78 +69,54 @@ export class HomePage {
     await alert.present();
   }
   async store(task: string) {
-    //validar se existe o descritivo da tarefa
     if (task.trim().length == 0) {
-      const toast = await this.toastCtrl.create({
-        message: "Informe o que deseja fazer!",
-        duration: 1500,
-        position: 'bottom',
-        animated: true,
-        color: 'danger'
-      });
-      toast.present();
+      this.processing = true;
+      this.utilsService.toast("Informe o que deseja fazer!",2000,"danger");
       return;
     }
     else {
       let task2 = { name: task, done: false };
       this.tasks.push(task2);
-
+      this.utilsService.showLoading();
       this.taskService.store(task2.name)
         .then(async (response) => {
-          const toast = await this.toastCtrl.create({
-            message: "Tarefa adicionada!",
-            duration: 1500,
-            position: 'bottom',
-            animated: true,
-            color: 'light'
-          });
-          toast.present();
+          this.processing = false;
+          this.utilsService.toast("Tarefa adicionada!",2000, "success");
           console.log(response);
           this.index();
         })
         .catch(async (erro) => {
           console.error(erro);
-          const toast = await this.toastCtrl.create({
-            message: "Ocorreu um erro ao adicionar a tarefa!",
-            duration: 1500,
-            position: 'bottom',
-            animated: true,
-            color: 'danger'
-          });
-          toast.present();
-        });
+          this.processing = false;
+          this.utilsService.toast("Ocorreu um erro ao adicionar a tarefa!",2000, "danger");
+        })
+        .finally(()=>{
+          this.utilsService.hideLoading();
+        })
     }
   }
   async actions(task: any) {
     const actionsheet = await this.actionsheetCtrl.create({
       header: "O que deseja fazer?",
       buttons: [{
-        text: task.done ? "Desmarcar" : "Marcar",
+        text: task.done ? "Pendente" : "Concluir",
         icon: task.done ? "radio-button-off" : "checkmark-circle",
         handler: async () => {
+          this.processing = true;
+          this.utilsService.showLoading();
           this.taskService.changeStatus(task.id)
             .then(async (response)=>{
               console.log(response);
-              const toast = await this.toastCtrl.create({
-                message: !task.done ? "Tarefa concluída!" : "Tarefa pendente!",
-                duration: 1500,
-                position: 'bottom',
-                animated: true,
-                color: 'light'
-              });
-              toast.present();
+              this.utilsService.toast(!task.done ? "Tarefa concluída!" : "Tarefa pendente!",2000, "success");
               this.index();
             })
             .catch(async(erro)=>{
               console.error(erro);
-              const toast = await this.toastCtrl.create({
-                message: "Ocorreu um erro ao atualizar a tarefa!",
-                duration: 1500,
-                position: 'bottom',
-                animated: true,
-                color: 'danger'
-              });
-              toast.present();
+              this.utilsService.toast("Ocorreu um erro ao atualizar a tarefa!",2000, "danger");
+            })
+            .finally(()=>{
+              this.processing = false;
+              this.utilsService.hideLoading();
             })
         }
       },
@@ -145,36 +125,28 @@ export class HomePage {
         icon: "close",
         role: 'cancel',
         handler: () => {
-          console.log('Clicado no botão cancelar')
+          console.log('Clicado no botão cancelar');
         }
       }]
     });
     await actionsheet.present();
   }
   async delete(task: any) {
+    this.utilsService.showLoading("Removendo Tarefa...");
     this.taskService.delete(task.id)
       .then(async(response)=>{
-        console.log(response)
-        const toast = await this.toastCtrl.create({
-          message: "Tarefa removida!",
-          duration: 1500,
-          position: 'bottom',
-          animated: true,
-          color: 'light'
-        });
-        toast.present();
+        console.log(response);
+        this.processing = true;
+        this.utilsService.toast("Tarefa removida!",2000,"success");
         this.index();
       })
       .catch(async(erro)=>{
         console.error(erro);
-        const toast = await this.toastCtrl.create({
-          message: "Ocorreu um erro ao remover a tarefa!",
-          duration: 1500,
-          position: 'bottom',
-          animated: true,
-          color: 'danger'
-        });
-        toast.present();
+        this.utilsService.toast("Ocorreu um erro ao remover a tarefa!",2000,"danger");
+      })
+      .finally(()=>{
+        this.processing = false;
+        this.utilsService.hideLoading();
       })
   }
 }
