@@ -11,7 +11,7 @@ import { AlertController, ActionSheetController } from '@ionic/angular';
 })
 export class HomePage {
   tasks: any[] = [];
-  processing : boolean = false;
+  processing: boolean = false;
   constructor(private alertCtrl: AlertController,
     private actionsheetCtrl: ActionSheetController,
     private taskService: TaskService,
@@ -22,9 +22,9 @@ export class HomePage {
     this.index();
   }
 
-  async index(){
+  async index() {
     this.taskService.index()
-      .then(async(response : any[])=>{
+      .then(async (response: any[]) => {
         this.processing = false;
         console.table(response);
         //this.utilsService.hideLoading();
@@ -33,9 +33,9 @@ export class HomePage {
       .catch(async (erro) => {
         console.error(erro);
         //this.utilsService.hideLoading();
-        this.utilsService.toast("Ocorreu um erro ao listar as tarefas!",2000, "danger");
+        this.utilsService.toast("Ocorreu um erro ao listar as tarefas!", 2000, "danger");
       })
-      .finally(()=>{
+      .finally(() => {
         this.utilsService.hideLoading();
       })
   }
@@ -55,6 +55,7 @@ export class HomePage {
           role: 'cancel',
           cssClass: 'secondary',
           handler: () => {
+            this.processing = true;
             console.log('Clicado no botão cancelar')
           }
         },
@@ -70,27 +71,27 @@ export class HomePage {
   }
   async store(task: string) {
     if (task.trim().length == 0) {
-      this.processing = true;
-      this.utilsService.toast("Informe o que deseja fazer!",2000,"danger");
+      this.processing = false;
+      this.utilsService.toast("Informe o que deseja fazer!", 2000, "warning");
       return;
     }
     else {
       let task2 = { name: task, done: false };
       this.tasks.push(task2);
-      this.utilsService.showLoading();
+      this.utilsService.showLoading("Incluindo tarefa..");
       this.taskService.store(task2.name)
         .then(async (response) => {
           this.processing = false;
-          this.utilsService.toast("Tarefa adicionada!",2000, "success");
+          this.utilsService.toast("Tarefa adicionada!", 2000, "success");
           console.log(response);
           this.index();
         })
         .catch(async (erro) => {
           console.error(erro);
           this.processing = false;
-          this.utilsService.toast("Ocorreu um erro ao adicionar a tarefa!",2000, "danger");
+          this.utilsService.toast("Ocorreu um erro ao adicionar a tarefa!", 2000, "danger");
         })
-        .finally(()=>{
+        .finally(() => {
           this.utilsService.hideLoading();
         })
     }
@@ -103,18 +104,18 @@ export class HomePage {
         icon: task.done ? "radio-button-off" : "checkmark-circle",
         handler: async () => {
           this.processing = true;
-          this.utilsService.showLoading();
+          this.utilsService.showLoading("Atualizando tarefa..");
           this.taskService.changeStatus(task.id)
-            .then(async (response)=>{
+            .then(async (response) => {
               console.log(response);
-              this.utilsService.toast(!task.done ? "Tarefa concluída!" : "Tarefa pendente!",2000, "success");
+              this.utilsService.toast(!task.done ? "Tarefa concluída!" : "Tarefa pendente!", 2000, "success");
               this.index();
             })
-            .catch(async(erro)=>{
+            .catch(async (erro) => {
               console.error(erro);
-              this.utilsService.toast("Ocorreu um erro ao atualizar a tarefa!",2000, "danger");
+              this.utilsService.toast("Ocorreu um erro ao atualizar a tarefa!", 2000, "danger");
             })
-            .finally(()=>{
+            .finally(() => {
               this.processing = false;
               this.utilsService.hideLoading();
             })
@@ -132,21 +133,41 @@ export class HomePage {
     await actionsheet.present();
   }
   async delete(task: any) {
-    this.utilsService.showLoading("Removendo Tarefa...");
-    this.taskService.delete(task.id)
-      .then(async(response)=>{
-        console.log(response);
-        this.processing = true;
-        this.utilsService.toast("Tarefa removida!",2000,"success");
-        this.index();
-      })
-      .catch(async(erro)=>{
-        console.error(erro);
-        this.utilsService.toast("Ocorreu um erro ao remover a tarefa!",2000,"danger");
-      })
-      .finally(()=>{
-        this.processing = false;
-        this.utilsService.hideLoading();
-      })
+    const alert = await this.alertCtrl.create({
+      header: 'Atenção!',
+      message: 'Tem certeza que deseja excluir?',
+      buttons: [
+        {
+          text: 'Sim',
+          handler: () => {
+            this.utilsService.showLoading("Removendo Tarefa...");
+            this.taskService.delete(task.id)
+              .then(async (response) => {
+                console.log(response);
+                this.processing = true;
+                this.utilsService.toast("Tarefa removida!", 2000, "success");
+                this.index();
+              })
+              .catch(async (erro) => {
+                console.error(erro);
+                this.utilsService.toast("Ocorreu um erro ao remover a tarefa!", 2000, "danger");
+              })
+              .finally(() => {
+                this.processing = false;
+                this.utilsService.hideLoading();
+              })
+          }
+        },
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+          cssClass: 'secondary',
+          handler: () => {
+            console.log('Clicado no botão cancelar');
+          }
+        }
+      ]
+    })
+    await alert.present();
   }
 }
